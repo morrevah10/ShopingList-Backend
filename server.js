@@ -15,6 +15,10 @@ mongoose.connect(process.env.MONGO_URI, {
   useUnifiedTopology: true,
   tls: true,
   tlsAllowInvalidCertificates: false
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch((error) => {
+  console.error('Error connecting to MongoDB:', error);
 });
 
 const ProductSchema = new mongoose.Schema({
