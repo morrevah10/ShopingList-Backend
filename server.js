@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+require('dotenv').config(); 
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -45,13 +46,10 @@ app.delete('/products/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-app.put('/products/:id', async (req, res) => {
-  const { id } = req.params;
-  const updatedData = req.body;
-  const product = await Product.findOneAndUpdate({ id }, updatedData, { new: true });
-  if (!product) {
-    return res.status(404).send('Product not found');
-  }
+app.put('/products/:id/toggle-marked', async (req, res) => {
+  const product = await Product.findOne({ id: req.params.id });
+  product.marked = !product.marked;
+  await product.save();
   res.json(product);
 });
 
