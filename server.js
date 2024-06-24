@@ -2,34 +2,29 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-require('dotenv').config();
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
-app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-mongoose.connect(process.env.MONGO_URI, {
+mongoose.connect('YOUR_MONGODB_CONNECTION_STRING', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  tls: true,
-  tlsAllowInvalidCertificates: false
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((error) => {
-  console.error('Error connecting to MongoDB:', error);
 });
 
 const ProductSchema = new mongoose.Schema({
   id: Number,
   name: String,
   amount: Number,
-  dateAdded: Date
+  dateAdded: Date,
+  marked: Boolean,
+  comments: String,
+  imageUrl: String
 });
 
 const Product = mongoose.model('Product', ProductSchema);
@@ -48,6 +43,34 @@ app.post('/products', async (req, res) => {
 app.delete('/products/:id', async (req, res) => {
   await Product.deleteOne({ id: req.params.id });
   res.json({ success: true });
+});
+
+app.put('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const updatedData = req.body;
+  const product = await Product.findOneAndUpdate({ id }, updatedData, { new: true });
+  if (!product) {
+    return res.status(404).send('Product not found');
+  }
+  res.json(product);
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.params.id}-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage });
+
+app.post('/products/:id/upload-image', upload.single('image'), async (req, res) => {
+  const product = await Product.findOne({ id: req.params.id });
+  product.imageUrl = `/uploads/${req.file.filename}`;
+  await product.save();
+  res.json(product);
 });
 
 app.listen(port, () => {
