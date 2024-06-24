@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-mongoose.connect('YOUR_MONGODB_CONNECTION_STRING', {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
